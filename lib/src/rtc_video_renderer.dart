@@ -10,8 +10,8 @@ class RTCVideoRenderer {
 
   set onResize(Function func) => _delegate.onResize = func;
 
-  set didFirstFrameRendered(Function func) =>
-      _delegate.didFirstFrameRendered = func;
+  set onFirstFrameRendered(Function func) =>
+      _delegate.onFirstFrameRendered = func;
 
   Future<void> initialize() => _delegate.initialize();
 

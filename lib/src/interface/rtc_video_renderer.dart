@@ -48,7 +48,7 @@ abstract class VideoRenderer extends ValueNotifier<RTCVideoValue> {
 
   Function? onResize;
 
-  Function? didFirstFrameRendered;
+  Function? onFirstFrameRendered;
 
   int get videoWidth;
 
