@@ -498,7 +498,6 @@
 
     dataChannel.eventChannel = eventChannel;
     dataChannel.flutterChannelId = dataChannelId;
-    [eventChannel setStreamHandler:dataChannel];
 
     FlutterEventSink eventSink = peerConnection.eventSink;
     if(eventSink){
@@ -508,6 +507,10 @@
                     @"label": dataChannel.label
                     });
     }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // setStreamHandler on main thread
+        [eventChannel setStreamHandler:dataChannel];
+     });
 }
 
 /** Called any time the PeerConnectionState changes. */
