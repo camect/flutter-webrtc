@@ -153,7 +153,7 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
                     .createInitializationOptions());
 
     // Initialize EGL contexts required for HW acceleration.
-    EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+//    EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
 
     getUserMediaImpl = new GetUserMediaImpl(this, context);
 
