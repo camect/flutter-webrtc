@@ -44,6 +44,7 @@
 #endif
                                                                     withTextures:[registrar textures]];
     [registrar addMethodCallDelegate:instance channel:channel];
+    [registrar publish:instance];
 }
 
 - (instancetype)initWithChannel:(FlutterMethodChannel *)channel
