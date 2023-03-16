@@ -375,7 +375,7 @@
 #pragma clang diagnostic ignored "-Wobjc-protocol-method-implementation"
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeSignalingState:(RTCSignalingState)newState {
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"signalingState",
                     @"state" : [self stringForSignalingState:newState]});
@@ -390,7 +390,7 @@
     peerConnection.remoteStreams[streamId] = stream;
 
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"onAddTrack",
                     @"streamId": streamId,
@@ -411,7 +411,7 @@
     [peerConnection.remoteTracks removeObjectForKey:track.trackId];
     NSString *streamId = stream.streamId;
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"onRemoveTrack",
                     @"streamId": streamId,
@@ -451,7 +451,7 @@
     }
 
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"onAddStream",
                     @"streamId": streamId,
@@ -478,7 +478,7 @@
     [peerConnection.remoteStreams removeObjectForKey:streamId];
 
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"onRemoveStream",
                     @"streamId": streamId,
@@ -488,14 +488,14 @@
 
 - (void)peerConnectionShouldNegotiate:(RTCPeerConnection *)peerConnection {
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{@"event" : @"onRenegotiationNeeded",});
     }
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceConnectionState:(RTCIceConnectionState)newState {
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"iceConnectionState",
                     @"state" : [self stringForICEConnectionState:newState]
@@ -505,7 +505,7 @@
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState {
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"iceGatheringState",
                     @"state" : [self stringForICEGatheringState:newState]
@@ -515,7 +515,7 @@
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didGenerateIceCandidate:(RTCIceCandidate *)candidate {
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"onCandidate",
                     @"candidate" : @{@"candidate": candidate.sdp, @"sdpMLineIndex": @(candidate.sdpMLineIndex), @"sdpMid": candidate.sdpMid}
@@ -546,7 +546,7 @@
        // setStreamHandler on main thread
        [eventChannel setStreamHandler:dataChannel];
        FlutterEventSink eventSink = peerConnection.eventSink;
-       if(eventSink){
+       if(eventSink && !self.isCleaningUp){
            eventSink(@{
                        @"event" : @"didOpenDataChannel",
                        @"id": dataChannelId,
@@ -561,7 +561,7 @@
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
 didChangeConnectionState:(RTCPeerConnectionState)newState {
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"peerConnectionState",
                     @"state": [self stringForPeerConnectionState:newState]
@@ -584,7 +584,7 @@ didStartReceivingOnTransceiver:(RTCRtpTransceiver *)transceiver {
         [streams addObject:[self mediaStreamToMap:stream ownerTag:peerConnection.flutterId]];
     }
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         NSMutableDictionary *event = [NSMutableDictionary  dictionary];
         [event addEntriesFromDictionary:@{
         @"event": @"onTrack",
@@ -627,7 +627,7 @@ didStartReceivingOnTransceiver:(RTCRtpTransceiver *)transceiver {
           changeReason:(NSString *)reason {
 
     FlutterEventSink eventSink = peerConnection.eventSink;
-    if(eventSink){
+    if(eventSink && !self.isCleaningUp){
         eventSink(@{
                     @"event" : @"onSelectedCandidatePairChanged",
                     @"local" : @{
