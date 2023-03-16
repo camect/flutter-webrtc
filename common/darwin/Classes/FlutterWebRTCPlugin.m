@@ -44,7 +44,7 @@
 #endif
                                                                     withTextures:[registrar textures]];
     [registrar addMethodCallDelegate:instance channel:channel];
-    [registrar publish:instance];
+    [registrar addApplicationDelegate:instance];
 }
 
 - (instancetype)initWithChannel:(FlutterMethodChannel *)channel
@@ -103,6 +103,10 @@
     }];
 #endif
     return self;
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application{
+
 }
 
 - (void)detachFromEngineForRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
