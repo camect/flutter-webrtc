@@ -148,6 +148,7 @@
 }
 
 - (void) sendEvent:(id)event withChannel:(RTCDataChannel *)channel {
+    if(channel){
     if(channel.eventSink) {
         channel.eventSink(event);
     } else {
@@ -155,6 +156,7 @@
             channel.eventQueue = [NSMutableArray array];
         }
         channel.eventQueue = [channel.eventQueue arrayByAddingObject:event];
+    }
     }
 }
 
