@@ -106,7 +106,7 @@
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application{
-
+    self.isCleaningUp = YES;
 }
 
 - (void)detachFromEngineForRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {

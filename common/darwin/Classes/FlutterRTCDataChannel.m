@@ -148,7 +148,7 @@
 }
 
 - (void) sendEvent:(id)event withChannel:(RTCDataChannel *)channel {
-    if(channel){
+    if(!self.isCleaningUp){
     if(channel.eventSink) {
         channel.eventSink(event);
     } else {

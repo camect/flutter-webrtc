@@ -50,5 +50,6 @@ typedef void (^CapturerStopHandler)(CompletionHandler handler);
 - (BOOL) hasLocalAudioTrack;
 - (void) ensureAudioSession;
 - (void) deactiveRtcAudioSession;
+@property (nonatomic) BOOL isCleaningUp;
 
 @end
