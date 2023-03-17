@@ -107,6 +107,10 @@
 
 - (void)applicationWillTerminate:(UIApplication *)application{
     self.isCleaningUp = YES;
+    [_eventChannel setStreamHandler:nil];
+    [self setEventSink: nil];
+    return;
+    
 }
 
 - (void)detachFromEngineForRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
