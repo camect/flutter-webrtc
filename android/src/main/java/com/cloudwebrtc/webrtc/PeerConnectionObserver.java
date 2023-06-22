@@ -259,17 +259,17 @@ class PeerConnectionObserver implements PeerConnection.Observer, EventChannel.St
           }
       }
       if (sender != null) {
-          peerConnection.getStats(rtcStatsReport -> handleStatsReport(rtcStatsReport, result), sender);
+//          peerConnection.getStats(rtcStatsReport -> handleStatsReport(rtcStatsReport, result), sender);
       } else if(receiver != null) {
-          peerConnection.getStats(rtcStatsReport -> handleStatsReport(rtcStatsReport, result), receiver);
+//          peerConnection.getStats(rtcStatsReport -> handleStatsReport(rtcStatsReport, result), receiver);
       } else {
           resultError("peerConnectionGetStats","MediaStreamTrack not found for id: " + trackId, result);
       }
   }
 
   void getStats(final Result result) {
-      peerConnection.getStats(
-              rtcStatsReport -> handleStatsReport(rtcStatsReport, result));
+//      peerConnection.getStats(
+//              rtcStatsReport -> handleStatsReport(rtcStatsReport, result));
   }
 
   @Override
