@@ -79,12 +79,16 @@
 
     RTCVideoEncoderFactorySimulcast *simulcastFactory = [[RTCVideoEncoderFactorySimulcast alloc]  initWithPrimary:encoderFactory
                                                                                                          fallback:encoderFactory];
-
+    
+    RTCPeerConnectionFactoryOptions *options = [[RTCPeerConnectionFactoryOptions alloc] init];
+    options.ignoreLoopbackNetworkAdapter = YES;
+    
     _peerConnectionFactory = [[RTCPeerConnectionFactory alloc]
                               initWithEncoderFactory:simulcastFactory
                               decoderFactory:decoderFactory];
-
-
+    [_peerConnectionFactory setOptions: options];
+    
+    
     self.peerConnections = [NSMutableDictionary new];
     self.localStreams = [NSMutableDictionary new];
     self.localTracks = [NSMutableDictionary new];
