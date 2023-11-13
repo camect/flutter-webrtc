@@ -63,6 +63,8 @@ import org.webrtc.RtpSender;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SessionDescription.Type;
+import org.webrtc.SoftwareVideoDecoderFactory;
+import org.webrtc.SoftwareVideoEncoderFactory;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
@@ -195,25 +197,30 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
 
     final PeerConnectionFactory.Builder factoryBuilder = PeerConnectionFactory.builder()
             .setOptions(options);
+    // TODO Avoid if and use a common implementation.
+    if(forceSWCodec) {
+        factoryBuilder
+                .setVideoEncoderFactory(new SoftwareVideoEncoderFactory())
+                .setVideoDecoderFactory(new SoftwareVideoDecoderFactory());
+    } else {
+        // Initialize EGL contexts required for HW acceleration.
+        EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
 
-    // Initialize EGL contexts required for HW acceleration.
-    EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+        videoEncoderFactory = new CustomVideoEncoderFactory(eglContext, true, true);
+        videoDecoderFactory = new CustomVideoDecoderFactory(eglContext);
 
-    videoEncoderFactory = new CustomVideoEncoderFactory(eglContext, true, true);
-    videoDecoderFactory = new CustomVideoDecoderFactory(eglContext);
+        factoryBuilder
+                .setVideoEncoderFactory(videoEncoderFactory)
+                .setVideoDecoderFactory(videoDecoderFactory);
 
-    factoryBuilder
-            .setVideoEncoderFactory(videoEncoderFactory)
-            .setVideoDecoderFactory(videoDecoderFactory);
-
-    videoDecoderFactory.setForceSWCodec(forceSWCodec);
-    videoDecoderFactory.setForceSWCodecList(forceSWCodecList);
-    videoEncoderFactory.setForceSWCodec(forceSWCodec);
-    videoEncoderFactory.setForceSWCodecList(forceSWCodecList);
-
-    mFactory = factoryBuilder
-            .setAudioDeviceModule(audioDeviceModule)
-            .createPeerConnectionFactory();
+        videoDecoderFactory.setForceSWCodec(forceSWCodec);
+        videoDecoderFactory.setForceSWCodecList(forceSWCodecList);
+        videoEncoderFactory.setForceSWCodec(forceSWCodec);
+        videoEncoderFactory.setForceSWCodecList(forceSWCodecList);
+    }
+        mFactory = factoryBuilder
+                .setAudioDeviceModule(audioDeviceModule)
+                .createPeerConnectionFactory();
 
   }
 
