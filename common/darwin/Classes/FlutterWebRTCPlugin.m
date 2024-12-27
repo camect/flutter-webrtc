@@ -115,6 +115,7 @@ void postEvent(FlutterEventSink sink, id _Nullable event) {
 #endif
                                       withTextures:[registrar textures]];
   [registrar addMethodCallDelegate:instance channel:channel];
+  [registrar addApplicationDelegate:instance];
 }
 
 - (instancetype)initWithChannel:(FlutterMethodChannel*)channel
@@ -170,6 +171,14 @@ void postEvent(FlutterEventSink sink, id _Nullable event) {
   }];
 #endif
   return self;
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application{
+    self.isCleaningUp = YES;
+    [_eventChannel setStreamHandler:nil];
+    [self setEventSink: nil];
+    return;
+    
 }
 
 - (void)detachFromEngineForRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
