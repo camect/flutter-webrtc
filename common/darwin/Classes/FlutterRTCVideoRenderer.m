@@ -198,12 +198,12 @@
     os_unfair_lock_unlock(&_lock);
     return;
   }
-  if(!_frameAvailable && _pixelBufferRef) {
-    [self copyI420ToCVPixelBuffer:_pixelBufferRef withFrame:frame];
-    if(_textureId != -1) {
+  if (_textureId != -1) {
+    if(!_frameAvailable && _pixelBufferRef) {
+      [self copyI420ToCVPixelBuffer:_pixelBufferRef withFrame:frame];
       [_registry textureFrameAvailable:_textureId];
+      _frameAvailable = true;
     }
-    _frameAvailable = true;
   }
   os_unfair_lock_unlock(&_lock);
 
