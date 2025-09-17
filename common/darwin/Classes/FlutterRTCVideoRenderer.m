@@ -64,13 +64,17 @@
 
 - (void)dispose {
   os_unfair_lock_lock(&_lock);
-  [_registry unregisterTexture:_textureId];
-  _textureId = -1;
+  _videoTrack = nil;
+  if (_textureId != -1 && _registry) {
+    [_registry unregisterTexture:_textureId];
+    _textureId = -1;
+  }
   if (_pixelBufferRef) {
     CVBufferRelease(_pixelBufferRef);
     _pixelBufferRef = nil;
   }
   _frameAvailable = false;
+  _eventSink = nil;
   os_unfair_lock_unlock(&_lock);
 }
 
