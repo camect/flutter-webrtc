@@ -20,6 +20,7 @@
   bool _isFirstFrameRendered;
   bool _frameAvailable;
   os_unfair_lock _lock;
+  BOOL _disposed;
 }
 
 @synthesize textureId = _textureId;
@@ -32,6 +33,7 @@
   self = [super init];
   if (self) {
     _lock = OS_UNFAIR_LOCK_INIT;
+    _disposed = NO;
     _isFirstFrameRendered = false;
     _frameAvailable = false;
     _frameSize = CGSizeZero;
@@ -64,18 +66,35 @@
 
 - (void)dispose {
   os_unfair_lock_lock(&_lock);
+  _disposed = YES;
   _videoTrack = nil;
-  if (_textureId != -1 && _registry) {
-    [_registry unregisterTexture:_textureId];
-    _textureId = -1;
-  }
+  _eventSink = nil;
+  int64_t textureIdLocal = _textureId;
+  _textureId = -1;
   if (_pixelBufferRef) {
     CVBufferRelease(_pixelBufferRef);
     _pixelBufferRef = nil;
   }
   _frameAvailable = false;
-  _eventSink = nil;
   os_unfair_lock_unlock(&_lock);
+  if (textureIdLocal != -1) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      @try {
+        if (self->_registry) {
+          [self->_registry unregisterTexture:textureIdLocal];
+        }
+      } @catch (NSException *e) {
+        // swallow: best-effort cleanup
+      }
+      os_unfair_lock_lock(&self->_lock);
+      self->_registry = nil;
+      os_unfair_lock_unlock(&self->_lock);
+    });
+  } else {
+    os_unfair_lock_lock(&_lock);
+    _registry = nil;
+    os_unfair_lock_unlock(&_lock);
+  }
 }
 
 - (void)setVideoTrack:(RTCVideoTrack*)videoTrack {
