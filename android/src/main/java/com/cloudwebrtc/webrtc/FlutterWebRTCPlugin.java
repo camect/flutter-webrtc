@@ -43,6 +43,12 @@ public class FlutterWebRTCPlugin implements FlutterPlugin, ActivityAware, EventC
     private EventChannel eventChannel;
     public EventChannel.EventSink eventSink;
 
+    // Add variables to hold Flutter engine bindings
+    private Context applicationContext;
+    private BinaryMessenger messenger;
+    private TextureRegistry textureRegistry;
+
+
     public FlutterWebRTCPlugin() {
         sharedSingleton = this;
     }
@@ -50,34 +56,46 @@ public class FlutterWebRTCPlugin implements FlutterPlugin, ActivityAware, EventC
     public static FlutterWebRTCPlugin sharedSingleton;
 
     public AudioProcessingController getAudioProcessingController() {
-        return methodCallHandler.audioProcessingController;
+        // Null check added for safety since methodCallHandler might be null now if not attached to activity
+        return methodCallHandler != null ? methodCallHandler.audioProcessingController : null;
     }
 
     public MediaStreamTrack getTrackForId(String trackId, String peerConnectionId) {
-        return methodCallHandler.getTrackForId(trackId, peerConnectionId);
+        return methodCallHandler != null ? methodCallHandler.getTrackForId(trackId, peerConnectionId) : null;
     }
 
     public LocalTrack getLocalTrack(String trackId) {
-        return methodCallHandler.getLocalTrack(trackId);
+        return methodCallHandler != null ? methodCallHandler.getLocalTrack(trackId) : null;
     }
 
     public MediaStreamTrack getRemoteTrack(String trackId) {
-        return methodCallHandler.getRemoteTrack(trackId);
+        return methodCallHandler != null ? methodCallHandler.getRemoteTrack(trackId) : null;
     }
 
+    // --- Plugin Lifecycle: Store bindings but *don't* call startListening yet ---
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-        startListening(binding.getApplicationContext(), binding.getBinaryMessenger(),
-                binding.getTextureRegistry());
+        this.applicationContext = binding.getApplicationContext();
+        this.messenger = binding.getBinaryMessenger();
+        this.textureRegistry = binding.getTextureRegistry();
     }
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        stopListening();
+        stopListening(); // Stop listening when engine is detached
+        this.applicationContext = null;
+        this.messenger = null;
+        this.textureRegistry = null;
     }
 
+    // --- Activity Lifecycle: Start listening only when an Activity is attached ---
     @Override
     public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+        // Start listening only when attached to an Activity (i.e., foreground)
+        if (methodCallHandler == null) {
+            startListening(applicationContext, messenger, textureRegistry);
+        }
+
         methodCallHandler.setActivity(binding.getActivity());
         this.observer = new LifeCycleObserver();
         this.lifecycle = ((HiddenLifecycleReference) binding.getLifecycle()).getLifecycle();
@@ -108,6 +126,9 @@ public class FlutterWebRTCPlugin implements FlutterPlugin, ActivityAware, EventC
 
     private void startListening(final Context context, BinaryMessenger messenger,
                                 TextureRegistry textureRegistry) {
+        // Add a check to prevent double initialization if logic is complex
+        if (methodCallHandler != null) return; 
+
         AudioSwitchManager.instance = new AudioSwitchManager(context);
         methodCallHandler = new MethodCallHandlerImpl(context, messenger, textureRegistry);
         methodChannel = new MethodChannel(messenger, "FlutterWebRTC.Method");
@@ -124,13 +145,22 @@ public class FlutterWebRTCPlugin implements FlutterPlugin, ActivityAware, EventC
     }
 
     private void stopListening() {
+        if (methodCallHandler == null) return;
+        
         methodCallHandler.dispose();
         methodCallHandler = null;
-        methodChannel.setMethodCallHandler(null);
-        eventChannel.setStreamHandler(null);
+        if (methodChannel != null) {
+            methodChannel.setMethodCallHandler(null);
+            methodChannel = null;
+        }
+        if (eventChannel != null) {
+            eventChannel.setStreamHandler(null);
+            eventChannel = null;
+        }
         if (AudioSwitchManager.instance != null) {
             Log.d(TAG, "Stopping the audio manager...");
             AudioSwitchManager.instance.stop();
+            AudioSwitchManager.instance = null; // Clear instance
         }
     }
 
