@@ -85,6 +85,8 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +112,7 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
   private final Map<String, MediaStream> localStreams = new HashMap<>();
   private final Map<String, LocalTrack> localTracks = new HashMap<>();
   private final LongSparseArray<FlutterRTCVideoRenderer> renders = new LongSparseArray<>();
+  private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
   public RecordSamplesReadyCallbackAdapter recordSamplesReadyCallbackAdapter;
 
@@ -1929,17 +1932,29 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
     result.success(res);
   }
 
-  public void peerConnectionGetStats(String trackId, String id, final Result result) {
-    PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+public void peerConnectionGetStats(String trackId, String id, final Result result) {
+    final PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
     if (pco == null || pco.getPeerConnection() == null) {
       resultError("peerConnectionGetStats", "peerConnection is null", result);
-    } else {
-      if(trackId == null || trackId.isEmpty()) {
-        pco.getStats(result);
-      } else {
-        pco.getStatsForTrack(trackId, result);
-      }
+      return;
     }
+    // Offload stats collection to a background thread
+    executor.execute(() -> {
+      if (pco.getPeerConnection() == null) {
+          resultError("peerConnectionGetStats", "PeerConnection closed during request.", result);
+          return;
+      }
+      
+      try {
+        if (trackId == null || trackId.isEmpty()) {
+          pco.getStats(result);
+        } else {
+          pco.getStatsForTrack(trackId, result);
+        }
+      } catch (Exception e) {
+          resultError("peerConnectionGetStats", "Exception during stats collection: " + e.getMessage(), result);
+      }
+    });
   }
 
   public void restartIce(final String id) {
