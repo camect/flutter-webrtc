@@ -224,7 +224,8 @@ class PeerConnectionObserver implements PeerConnection.Observer, EventChannel.St
           report_map.putString("id", report.getId());
           report_map.putString("type", report.getType());
           report_map.putDouble("timestamp", report.getTimestampUs());
-
+          
+          //Other reports are ignored to reduce the amount of data sent to Flutter
           if ("inbound-rtp".equals(report.getType())) {              
               ConstraintsMap v_map = new ConstraintsMap();
               Map<String, Object> values = report.getMembers();                       

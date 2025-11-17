@@ -1932,7 +1932,7 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
     result.success(res);
   }
 
-public void peerConnectionGetStats(String trackId, String id, final Result result) {
+  public void peerConnectionGetStats(String trackId, String id, final Result result) {
     final PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
     if (pco == null || pco.getPeerConnection() == null) {
       resultError("peerConnectionGetStats", "peerConnection is null", result);
