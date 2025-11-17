@@ -224,60 +224,35 @@ class PeerConnectionObserver implements PeerConnection.Observer, EventChannel.St
           report_map.putString("id", report.getId());
           report_map.putString("type", report.getType());
           report_map.putDouble("timestamp", report.getTimestampUs());
-
-          Map<String, Object> values = report.getMembers();
-          ConstraintsMap v_map = new ConstraintsMap();
-          for (String key : values.keySet()) {
-              Object v = values.get(key);
-              if(v instanceof String) {
-                  v_map.putString(key, (String)v);
-              } else if(v instanceof String[]) {
-                  ConstraintsArray arr = new ConstraintsArray();
-                  for(String s : (String[])v) {
-                      arr.pushString(s);
+          
+          //Other reports are ignored to reduce the amount of data sent to Flutter
+          if ("inbound-rtp".equals(report.getType())) {              
+              ConstraintsMap v_map = new ConstraintsMap();
+              Map<String, Object> values = report.getMembers();                       
+              String[] keysToExtract = {"packetsReceived", "packetsLost", "framesDecoded"};
+              
+              for (String key : keysToExtract) {
+                  Object v = values.get(key);
+                  if (v != null) {
+                      if (v instanceof Number) {
+                          // Send as Long to ensure large counters (64-bit) are preserved
+                          v_map.putLong(key, ((Number) v).longValue()); 
+                      } else if (v instanceof String) {
+                          v_map.putString(key, (String)v);
+                      } else {
+                          v_map.putLong(key, 0); 
+                      }
+                  } else {
+                      v_map.putLong(key, 0); 
                   }
-                  v_map.putArray(key, arr.toArrayList());
-              } else if(v instanceof Integer) {
-                  v_map.putInt(key, (Integer)v);
-              } else if(v instanceof Long) {
-                  v_map.putLong(key, (Long)v);
-              } else if(v instanceof Double) {
-                  v_map.putDouble(key, (Double)v);
-              } else if(v instanceof Boolean) {
-                  v_map.putBoolean(key, (Boolean)v);
-              } else if(v instanceof BigInteger){
-                  v_map.putLong(key, ((BigInteger)v).longValue());
-              }  else if(v instanceof LinkedHashMap) {
-                    ConstraintsMap m = new ConstraintsMap();
-                    for(Map.Entry<String, Object> entry : ((LinkedHashMap<String, Object>)v).entrySet()) {
-                        Object value = entry.getValue();
-                        if(value instanceof String) {
-                            m.putString(entry.getKey(), (String)value);
-                        } else if(value instanceof Integer) {
-                            m.putInt(entry.getKey(), (Integer)value);
-                        } else if(value instanceof Long) {
-                            m.putLong(entry.getKey(), (Long)value);
-                        } else if(value instanceof Double) {
-                            m.putDouble(entry.getKey(), (Double)value);
-                        } else if(value instanceof Boolean) {
-                            m.putBoolean(entry.getKey(), (Boolean)value);
-                        } else if(value instanceof BigInteger) {
-                            m.putLong(entry.getKey(), ((BigInteger)value).longValue());
-                        } else {
-                            Log.d(TAG, "getStats() unknown type: " + value.getClass().getName() + " for [" + entry.getKey() + "] value: " + value);
-                        }
-                    }
-                    v_map.putMap(key, m.toMap());
-              } else {
-                  Log.d(TAG, "getStats() unknown type: " + v.getClass().getName() + " for [" + key + "] value: " + v);
               }
+              report_map.putMap("values", v_map.toMap());
+              stats.pushMap(report_map);
           }
-      report_map.putMap("values", v_map.toMap());
-      stats.pushMap(report_map);
-    }
+      }
 
-    params.putArray("stats", stats.toArrayList());
-    result.success(params.toMap());
+      params.putArray("stats", stats.toArrayList());
+      result.success(params.toMap());
   }
 
   void getStatsForTrack(String trackId, Result result) {
