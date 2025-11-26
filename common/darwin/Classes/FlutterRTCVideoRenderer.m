@@ -67,7 +67,13 @@
 - (void)dispose {
   os_unfair_lock_lock(&_lock);
   _disposed = YES;
-  _videoTrack = nil;
+
+  // Remove renderer from video track
+  if (_videoTrack) {
+    [_videoTrack removeRenderer:self];
+    _videoTrack = nil;
+  }
+
   _eventSink = nil;
   int64_t textureIdLocal = _textureId;
   _textureId = -1;
@@ -77,8 +83,11 @@
   }
   _frameAvailable = false;
   os_unfair_lock_unlock(&_lock);
+
+  // SYNCHRONOUSLY unregister the texture on the main thread
+  // This forces the Flutter engine to stop referencing this object immediately.
   if (textureIdLocal != -1) {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_sync(dispatch_get_main_queue(), ^{
       @try {
         if (self->_registry) {
           [self->_registry unregisterTexture:textureIdLocal];
@@ -86,15 +95,16 @@
       } @catch (NSException *e) {
         // swallow: best-effort cleanup
       }
-      os_unfair_lock_lock(&self->_lock);
-      self->_registry = nil;
-      os_unfair_lock_unlock(&self->_lock);
     });
-  } else {
-    os_unfair_lock_lock(&_lock);
-    _registry = nil;
-    os_unfair_lock_unlock(&_lock);
   }
+
+  // Release registry reference after unregistering
+  os_unfair_lock_lock(&_lock);
+  _registry = nil;
+  os_unfair_lock_unlock(&_lock);
+  
+  // Set stream handler to nil for clean detachment
+  [_eventChannel setStreamHandler:nil]; 
 }
 
 - (void)setVideoTrack:(RTCVideoTrack*)videoTrack {
@@ -217,6 +227,11 @@
 - (void)renderFrame:(RTCVideoFrame*)frame {
 
   os_unfair_lock_lock(&_lock);
+  if(_disposed) { 
+    // Added immediate check for disposal
+      os_unfair_lock_unlock(&_lock);
+      return;
+  }
   if(_videoTrack == nil) {
     os_unfair_lock_unlock(&_lock);
     return;
